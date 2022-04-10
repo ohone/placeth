@@ -8,9 +8,10 @@ import "./Hevm.sol";
 contract PlaceEthTest is DSTest {
     PlaceEth CuT;
     Hevm vm = Hevm(HEVM_ADDRESS);
+    uint256 cooldownSeconds = 123;
 
     function setUp() public {
-        CuT = new PlaceEth(1024);
+        CuT = new PlaceEth(1024, cooldownSeconds);
     }
 
     function test_Place_SetsColor() public {
@@ -51,5 +52,29 @@ contract PlaceEthTest is DSTest {
 
         vm.expectRevert("out of bounds");
         CuT.place(0, position);
+    }
+
+    function test_Place_BeforeCooldown_Reverts() public {
+        // arrange
+        bytes32 place = bytes32(uint256(100));
+        CuT.place(255, place);
+        assertEq(CuT.board(place), 255);
+        vm.warp(cooldownSeconds - 1);
+
+        // act/assert
+        vm.expectRevert("address still on cooldown");
+        CuT.place(251, place);
+    }
+
+    function test_Place_AfterCooldown() public {
+        // arrange
+        bytes32 place = bytes32(uint256(100));
+        CuT.place(255, place);
+        assertEq(CuT.board(place), 255);
+        vm.warp(cooldownSeconds);
+
+        // act/assert
+        CuT.place(251, place);
+        assertEq(CuT.board(place), 251);
     }
 }
