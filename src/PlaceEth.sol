@@ -13,11 +13,15 @@ contract PlaceEth {
     function place(uint256 color, bytes32 position)
         external
         withinBoard(position)
+        validPlace(color, position)
     {
-        require(board[position] != color, "colour already placed");
-
         board[position] = color;
         emit placed(color, position, msg.sender);
+    }
+
+    modifier validPlace(uint256 color, bytes32 position) {
+        require(board[position] != color, "color already placed");
+        _;
     }
 
     modifier withinBoard(bytes32 position) {
